@@ -11,7 +11,7 @@ import SwiftUI
 struct TheDogAppApp: App {
     var body: some Scene {
         WindowGroup {
-            MainListView()
+            MainListView(viewModel: DogViewModel())
         }
     }
 }
