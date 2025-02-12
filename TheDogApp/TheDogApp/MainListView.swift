@@ -29,6 +29,7 @@ struct MainListView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
+                    .accessibilityIdentifier("dogBreedsTitle")
                 
                 HStack {
                     Image(systemName: "magnifyingglass")
@@ -38,6 +39,7 @@ struct MainListView: View {
                         .padding(8)
                         .background(Color(.systemGray6))
                         .cornerRadius(10)
+                        .accessibilityIdentifier("dogSearchField")
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
@@ -47,12 +49,23 @@ struct MainListView: View {
                         ForEach(filteredDogs.indices, id: \.self) { index in
                             let dog = filteredDogs[index]
                             
-                            NavigationLink(destination: DetailListView(dog: dog)) {
+                            NavigationLink(destination: DetailView(dog: dog)) {
                                 HStack {
                                     Text(dog.name)
                                         .font(.headline)
                                         .foregroundColor(.primary)
+                                        .accessibilityIdentifier("dogName_\(dog.name)")  // Accessibility identifier
                                     Spacer()
+                                    if let imageURL = dog.image?.url {
+                                        AsyncImage(url: URL(string: imageURL)) { image in
+                                            image.resizable()
+                                                 .scaledToFill()
+                                                 .frame(width: 100, height: 120)
+                                        } placeholder: {
+                                            ProgressView()
+                                                .accessibilityIdentifier("dogImagePlaceholder_\(dog.name)")  // Placeholder identifier
+                                        }
+                                    }
                                 }
                                 .padding()
                                 .background(
@@ -64,16 +77,17 @@ struct MainListView: View {
                                 .padding(.vertical, 4)
                             }
                             .buttonStyle(.plain)
+                            .accessibilityIdentifier("dogRow_\(index)") 
                             .onAppear {
-                                if index == viewModel.dogs.count - 1 { 
+                                if index == viewModel.dogs.count - 1 {
                                     viewModel.fetchDogs()
                                 }
                             }
-                            Spacer(minLength: 15)
+                            Spacer(minLength: 10)
                         }
                     }
-                }.padding(.top, 10)
-
+                }
+                .padding(.top, 10)
             }
             .navigationBarHidden(true)
             .onAppear {
@@ -84,3 +98,4 @@ struct MainListView: View {
         }
     }
 }
+

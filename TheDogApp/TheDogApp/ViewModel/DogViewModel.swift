@@ -10,22 +10,22 @@ import Combine
 
 class DogViewModel: ObservableObject {
     @Published var dogs: [Dog] = []
+    @Published var errorMessage: String?
+    @Published var isLoading: Bool = false 
     private var cancellables = Set<AnyCancellable>()
-    private var currentPage = 1 
+    private var currentPage = 1
+    private let service: DogServiceProtocol
+
+    init(service: DogServiceProtocol = DogService()) {
+        self.service = service
+    }
 
     func fetchDogs() {
-        guard let url = URL(string: "https://api.thedogapi.com/v1/breeds?limit=10&page=\(currentPage)") else {
-            print("Invalid URL")
-            return
-        }
-
-        URLSession.shared.dataTaskPublisher(for: url)
-            .map(\.data)
-            .decode(type: [Dog].self, decoder: JSONDecoder())
-            .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: { completion in
+        service.fetchDogs(page: currentPage, limit: 10)
+            .sink(receiveCompletion: { [weak self] completion in
                 switch completion {
                 case .failure(let error):
+                    self?.errorMessage = "Failed to fetch dogs: \(error.localizedDescription)"
                     print("Error fetching dogs: \(error)")
                 case .finished:
                     break

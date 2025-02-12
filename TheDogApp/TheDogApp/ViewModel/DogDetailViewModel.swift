@@ -14,22 +14,18 @@ class DogDetailViewModel: ObservableObject {
     @Published var isLoading: Bool = false
 
     private var cancellables = Set<AnyCancellable>()
+    private let service: DogDetailServiceProtocol
+
+    init(service: DogDetailServiceProtocol = DogDetailService()) {
+        self.service = service
+    }
 
     func fetchDogDetail(for dogID: Int) {
-        guard let url = URL(string: "https://api.thedogapi.com/v1/breeds/\(dogID)") else {
-            self.errorMessage = "Invalid URL"
-            return
-        }
+        isLoading = true
 
-        isLoading = true 
-
-        URLSession.shared.dataTaskPublisher(for: url)
-            .map(\.data)
-            .decode(type: DogDetail.self, decoder: JSONDecoder())
-            .receive(on: DispatchQueue.main)
-            .sink(receiveCompletion: { [weak self] completion in
+        service.fetchDogDetail(for: dogID)
+            .sink(receiveCompletion: { [weak self] (completion: Subscribers.Completion<Error>) in
                 self?.isLoading = false
-
                 if case .failure(let error) = completion {
                     self?.errorMessage = "Error: \(error.localizedDescription)"
                 }

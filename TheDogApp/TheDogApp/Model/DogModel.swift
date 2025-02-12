@@ -26,5 +26,5 @@ struct Dog: Codable, Identifiable {
 }
 
 struct DogImage: Codable {
-    let url: String
+    let url: String?
 }

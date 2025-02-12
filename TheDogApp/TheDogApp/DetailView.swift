@@ -6,7 +6,7 @@
 //
 import SwiftUI
 
-struct DetailListView: View {
+struct DetailView: View {
     let dog: Dog
     @StateObject private var viewModel = DogDetailViewModel()
     @Environment(\.presentationMode) var presentationMode
@@ -16,7 +16,7 @@ struct DetailListView: View {
             if viewModel.isLoading {
                 VStack {
                     Spacer()
-                    ProgressView("Loading...")
+                    ProgressView("Loading dogs...")
                         .progressViewStyle(CircularProgressViewStyle())
                         .padding()
                 }
@@ -26,7 +26,7 @@ struct DetailListView: View {
                     Text(detail.name)
                         .font(.largeTitle)
                         .bold()
-
+                    
                     CharacteristicCard(title: "Origin", value: detail.origin ?? "Unknown", icon: "globe")
                     CharacteristicCard(title: "Bred For", value: detail.bredFor ?? "Unknown", icon: "pawprint.fill")
                     CharacteristicCard(title: "Breed Group", value: detail.breedGroup ?? "Unknown", icon: "person.3.fill")
@@ -64,8 +64,6 @@ struct DetailListView: View {
         }
     }
 }
-
-
 
 struct CharacteristicCard: View {
     let title: String

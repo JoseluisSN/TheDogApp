@@ -8,36 +8,42 @@
 import XCTest
 
 final class TheDogAppUITests: XCTestCase {
-
+    private var app: XCUIApplication!
+    
     override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-
-        // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
-
-        // In UI tests it’s important to set the initial state - such as interface orientation - required for your tests before they run. The setUp method is a good place to do this.
-    }
-
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
-
-    @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
-        let app = XCUIApplication()
+        app = XCUIApplication()
         app.launch()
-
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
     }
-
-    @MainActor
-    func testLaunchPerformance() throws {
-        if #available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 7.0, *) {
-            // This measures how long it takes to launch your application.
-            measure(metrics: [XCTApplicationLaunchMetric()]) {
-                XCUIApplication().launch()
-            }
-        }
+    
+    override func tearDownWithError() throws {
+        super.tearDown()
+        app = nil
+    }
+    
+    func testTitleIsVisible() {
+        let title = app.staticTexts["dogBreedsTitle"]
+        XCTAssertTrue(title.exists, "The title '🐶 Dog Breeds' should be visible on the screen.")
+    }
+    
+    func testSearchDog() {
+        let searchField = app.textFields["dogSearchField"]
+        XCTAssertTrue(searchField.exists, "The search field should be visible.")
+        
+        searchField.tap()
+        searchField.typeText("Retriever")
+        
+        let goldenRetriever = app.staticTexts["dogName_Golden Retriever"]
+        XCTAssertTrue(goldenRetriever.waitForExistence(timeout: 5), "Golden Retriever should appear in the search results.")
+    }
+    
+    func testLazyVStackLoadsMoreDogs() {
+        let firstDog = app.staticTexts["dogName_Golden Retriever"]
+        XCTAssertTrue(firstDog.exists, "The first dog (Golden Retriever) should be visible.")
+        
+        app.swipeUp()
+        
+        let lastDog = app.staticTexts["dogName_Labrador Retriever"]
+        XCTAssertTrue(lastDog.waitForExistence(timeout: 5), "The last dog (Labrador Retriever) should appear after scrolling.")
     }
 }
