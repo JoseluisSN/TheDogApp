@@ -5,10 +5,12 @@
 //  Created by Joseluis SN on 7/02/25.
 //
 import SwiftUI
+import LocalAuthentication
 
 struct MainListView: View {
     @StateObject var viewModel: DogViewModel
     @State private var searchText = ""
+    @EnvironmentObject var router: Router
     
     var filteredDogs: [Dog] {
         if searchText.isEmpty {
