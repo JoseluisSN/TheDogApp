@@ -11,63 +11,85 @@ import FirebaseAuth
 struct SignUpView: View {
     @State private var email: String = ""
     @State private var password: String = ""
+    @State private var emailError: String? = nil
+    @State private var passwordError: String? = nil
     @AppStorage("uid") var userID: String = ""
     @Environment(\.presentationMode) var presentationMode
+    @State private var isLoading = false
     
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 5) {
                 Text("Create an Account!")
                     .foregroundColor(.black)
-                    .font(.largeTitle)
+                    .font(.title)
                     .bold()
                     .frame(maxWidth: .infinity, alignment: .leading)
                 
                 Text("We need your email and password to create an account")
-                    .font(.system(size: 19))
+                    .font(.system(size: 15))
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .foregroundStyle(Color.black)
-            }.padding(.horizontal, 20).padding(.top, 10)
+                    .foregroundColor(.black)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
             
             VStack(spacing: 6) {
                 CustomTextField(icon: "pawprint", placeholder: "Email", text: $email)
                     .padding(.bottom, 4)
-                
-                CustomSecureField(icon: "lock", placeholder: "Password", text: $password)
-            }.padding(.horizontal, 20)
-                .padding(.top, 13)
-            
-            Button {
-                Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
-                    if let error = error {
-                        print(error)
-                        return
-                    }
-                    
-                    if let authResult = authResult {
-                        print(authResult.user.uid)
-                        userID = authResult.user.uid
-                        presentationMode.wrappedValue.dismiss()
-                    }
+                if let emailError = emailError {
+                    Text(emailError)
+                        .foregroundColor(.white)
+                        .font(.system(size: 14))
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 
+                CustomSecureField(icon: "lock", placeholder: "Password", text: $password)
+                if let passwordError = passwordError {
+                    Text(passwordError)
+                        .foregroundColor(.white)
+                        .font(.system(size: 14))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 13)
+            
+            Button {
+                validateFields()
+                if emailError == nil && passwordError == nil {
+                    registerUser()
+                }
             } label: {
-                Text("Create New Account")
-                    .foregroundColor(.black)
-                    .font(.title3)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.white)
-                    )
-                    .padding(.horizontal, 20)
-                    .padding(.vertical)
-            }.padding(.top, 10)
+                ZStack {
+                    if isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                    } else {
+                        Text("Create new account")
+                            .foregroundColor(.black)
+                            .font(.system(size: 17))
+                            .bold()
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.white)
+                )
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical)
+            .disabled(isLoading)
             
             Spacer()
-            
-        } .background(
+        }
+        .background(
             LinearGradient(gradient: Gradient(colors: [Color.white, Color.black]), startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
         )
@@ -87,12 +109,52 @@ struct SignUpView: View {
         }
     }
     
+    private func validateFields() {
+        if email.isEmpty {
+            emailError = "Email is required."
+        } else if !isValidEmail(email) {
+            emailError = "Invalid email format."
+        } else {
+            emailError = nil
+        }
+        
+        if password.isEmpty {
+            passwordError = "Password is required."
+        } else if !isValidPassword(password) {
+            passwordError = "Password must be at least 6 characters, contain an uppercase letter and special character."
+        } else {
+            passwordError = nil
+        }
+    }
+    
+    private func registerUser() {
+        isLoading = true
+        Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
+            isLoading = false
+            if let error = error {
+                print(error.localizedDescription)
+                return
+            }
+            
+            if let authResult = authResult {
+                print(authResult.user.uid)
+                userID = authResult.user.uid
+                presentationMode.wrappedValue.dismiss()
+            }
+        }
+    }
+    
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegex = NSPredicate(format: "SELF MATCHES %@", "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$")
+        return emailRegex.evaluate(with: email.uppercased())
+    }
+    
     private func isValidPassword(_ password: String) -> Bool {
         let passwordRegex = NSPredicate(format: "SELF MATCHES %@", "^(?=.*[a-z])(?=.*[$@$#!%*?&])(?=.*[A-Z]).{6,}$")
-        
         return passwordRegex.evaluate(with: password)
     }
 }
+
 
 #Preview {
     SignUpView()

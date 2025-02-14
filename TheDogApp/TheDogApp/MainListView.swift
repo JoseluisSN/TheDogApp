@@ -4,13 +4,17 @@
 //
 //  Created by Joseluis SN on 7/02/25.
 //
+
 import SwiftUI
 import LocalAuthentication
+import FirebaseAuth
 
 struct MainListView: View {
     @StateObject var viewModel: DogViewModel
     @State private var searchText = ""
     @EnvironmentObject var router: Router
+    @Environment(\.presentationMode) var presentationMode
+    @State private var isBiometricEnabled: Bool = false
     
     var filteredDogs: [Dog] {
         if searchText.isEmpty {
@@ -25,13 +29,27 @@ struct MainListView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                Text("🐶 Dog Breeds")
-                    .font(.largeTitle)
-                    .bold()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .accessibilityIdentifier("dogBreedsTitle")
+                HStack {
+                    Text("🐶 Dog Breeds")
+                        .font(.largeTitle)
+                        .bold()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 10)
+                        .accessibilityIdentifier("dogBreedsTitle")
+                        .foregroundStyle(Color.black)
+
+                    Button(action: logOut) {
+                        Text("Log out")
+                            .foregroundColor(.white)
+                            .frame(width: 80, height: 30)
+                            .bold()
+                            .background(
+                                RoundedRectangle(cornerRadius:7)
+                                    .fill(Color.black)
+                            )
+                    }
+                }
+                .padding(.horizontal, 16)
                 
                 HStack {
                     Image(systemName: "magnifyingglass")
@@ -46,6 +64,17 @@ struct MainListView: View {
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
                 
+                Toggle(isOn: $isBiometricEnabled) {
+                    Text(isBiometricEnabled ? "Desactivar biometría" : "Habilitar biometría")
+                        .font(.headline)
+                        .foregroundColor(.white).frame(height: 40)
+                }
+                .toggleStyle(SwitchToggleStyle(tint: .green))
+                .background(isBiometricEnabled ? Color.green : Color.gray)
+                .cornerRadius(10)
+                .padding(.horizontal, 16)
+                
+                
                 ScrollView {
                     LazyVStack {
                         ForEach(filteredDogs.indices, id: \.self) { index in
@@ -56,16 +85,16 @@ struct MainListView: View {
                                     Text(dog.name)
                                         .font(.headline)
                                         .foregroundColor(.primary)
-                                        .accessibilityIdentifier("dogName_\(dog.name)")  // Accessibility identifier
+                                        .accessibilityIdentifier("dogName_\(dog.name)")
                                     Spacer()
                                     if let imageURL = dog.image?.url {
                                         AsyncImage(url: URL(string: imageURL)) { image in
                                             image.resizable()
-                                                 .scaledToFill()
-                                                 .frame(width: 100, height: 120)
+                                                .scaledToFill()
+                                                .frame(width: 100, height: 120)
                                         } placeholder: {
                                             ProgressView()
-                                                .accessibilityIdentifier("dogImagePlaceholder_\(dog.name)")  // Placeholder identifier
+                                                .accessibilityIdentifier("dogImagePlaceholder_\(dog.name)")
                                         }
                                     }
                                 }
@@ -79,7 +108,7 @@ struct MainListView: View {
                                 .padding(.vertical, 4)
                             }
                             .buttonStyle(.plain)
-                            .accessibilityIdentifier("dogRow_\(index)") 
+                            .accessibilityIdentifier("dogRow_\(index)")
                             .onAppear {
                                 if index == viewModel.dogs.count - 1 {
                                     viewModel.fetchDogs()
@@ -99,5 +128,20 @@ struct MainListView: View {
             }
         }
     }
+    
+    private func logOut() {
+        do {
+            try Auth.auth().signOut()
+            UserDefaults.standard.removeObject(forKey: "isUserLoggedIn")
+            UserDefaults.standard.removeObject(forKey: "hasLaunchedBefore")
+            presentationMode.wrappedValue.dismiss()
+        } catch {
+            print("Error al cerrar sesión: \(error.localizedDescription)")
+        }
+    }
+}
+
+#Preview {
+    MainListView(viewModel: DogViewModel())
 }
 

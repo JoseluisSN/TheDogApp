@@ -24,8 +24,13 @@ struct DetailView: View {
             } else if let detail = viewModel.dogDetail {
                 VStack(alignment: .leading, spacing: 16) {
                     Text(detail.name)
-                        .font(.largeTitle)
+                        .font(.title)
                         .bold()
+                        .frame(maxWidth: .infinity)
+                        .foregroundStyle(Color.black)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
                     
                     CharacteristicCard(title: "Origin", value: detail.origin ?? "Unknown", icon: "globe")
                     CharacteristicCard(title: "Bred For", value: detail.bredFor ?? "Unknown", icon: "pawprint.fill")

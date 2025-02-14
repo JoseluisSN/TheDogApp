@@ -24,7 +24,7 @@ struct LoginView: View {
                 .fontWeight(.semibold)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 15)
-                .foregroundStyle(.black)
+                .foregroundStyle(Color.black)
             
             Image("whitedog")
                 .resizable()
@@ -36,45 +36,24 @@ struct LoginView: View {
             
             CustomSecureField(icon: "lock", placeholder: "Password", text: $viewModel.password)
             
+            if let errorMessage = viewModel.errorMessage {
+                Text(errorMessage)
+                    .foregroundColor(.white)
+                    .font(.system(size: 16))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            
             Text("Are you new? SignUp")
                 .foregroundColor(.white)
                 .fontWeight(.semibold)
-                .padding(.bottom, 18)
+                .padding(.top, 18)
                 .onTapGesture {
                     router.navigate(to: .registerView)
                 }
             
             Button {
-                guard let clientID = FirebaseApp.app()?.options.clientID else { return }
+                signInWithGoogle()
                 
-                let config = GIDConfiguration(clientID: clientID)
-                GIDSignIn.sharedInstance.configuration = config
-                
-                GIDSignIn.sharedInstance.signIn(withPresenting: getRootViewController()) { result, error in
-                    guard error == nil else {
-                        print("Error: \(error!.localizedDescription)")
-                        return
-                    }
-                    
-                    guard let user = result?.user,
-                          let idToken = user.idToken?.tokenString else {
-                        return
-                    }
-                    
-                    let credential = GoogleAuthProvider.credential(withIDToken: idToken,
-                                                                   accessToken: user.accessToken.tokenString)
-                    
-                    Auth.auth().signIn(with: credential) { authResult, error in
-                        if let error = error {
-                            print("Error: \(error.localizedDescription)")
-                            return
-                        }
-                        
-                        withAnimation {
-                            showMainListView = true
-                        }
-                    }
-                }
             } label: {
                 HStack {
                     Image("googleOne")
@@ -90,55 +69,41 @@ struct LoginView: View {
                 .background(Color.white)
                 .cornerRadius(10)
             }
+            
             HStack {
-                    Button {
-                        Auth.auth().signIn(withEmail: viewModel.email, password: viewModel.password) { authResult, error in
-                            if let error = error {
-                                print("Error: \(error.localizedDescription)")
-                                return
-                            }
-                            if let authResult = authResult {
-                                print("User ID: \(authResult.user.uid)")
-                                viewModel.userID = authResult.user.uid
-                                withAnimation {
-                                    showMainListView = true
-                                }
-                            }
-                        }
-                    } label: {
-                        Text("Login")
-                            .foregroundColor(.black)
-                            .font(.title3)
-                            .bold()
-                            .frame(height: 45)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(Color.white)
-                            )
+                Button {
+                    if viewModel.email.isEmpty || viewModel.password.isEmpty {
+                        viewModel.errorMessage = "Please enter both email and password."
+                        return
                     }
                     
-                    Spacer()
-                    
-                    Button {
-                        authenticate()
-                    } label: {
-                        HStack {
-                            Image(systemName: "faceid")
-                                .font(.title2)
+                    viewModel.signIn { success in
+                        if success {
+                            saveSession()
+                            withAnimation {
+                                showMainListView = true
+                            }
+                        } else {
+                            viewModel.errorMessage = "Please verify your credentials."
                         }
-                        .frame(maxWidth: .infinity)
-                        .frame(width: 45 ,height: 45)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
                     }
-                    .fullScreenCover(isPresented: $showMainListView) {
-                        MainListView(viewModel: DogViewModel())
-                    }
-                
-            }.frame(maxWidth: .infinity)
-
+                } label: {
+                    Text("Login")
+                        .foregroundColor(.black)
+                        .font(.title3)
+                        .bold()
+                        .frame(height: 45)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .fullScreenCover(isPresented: $showMainListView){
+                            MainListView(viewModel: DogViewModel())
+                        }
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color.white)
+                        )
+                }
+            }
+            .frame(maxWidth: .infinity)
             
             Spacer()
         }
@@ -147,6 +112,9 @@ struct LoginView: View {
             LinearGradient(gradient: Gradient(colors: [Color.white, Color.black]), startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
         )
+        .onAppear {
+            checkSession()
+        }
     }
     
     private func authenticate() {
@@ -154,7 +122,7 @@ struct LoginView: View {
         var error: NSError?
         
         if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
-            let reason = "Scan your face to authenticate"
+            let reason = "Scan to authenticate please"
             context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
                 DispatchQueue.main.async {
                     if success {
@@ -163,16 +131,60 @@ struct LoginView: View {
                             showMainListView = true
                         }
                     } else {
-                        print("Authentication failed: \(authenticationError?.localizedDescription ?? "Unknown error")")
+                        viewModel.errorMessage = "Authentication failed: \(authenticationError?.localizedDescription ?? "Unknown error")"
                     }
                 }
             }
         } else {
-            print("Biometric authentication not available: \(error?.localizedDescription ?? "Unknown error")")
+            viewModel.errorMessage = "Biometric authentication not available: \(error?.localizedDescription ?? "Unknown error")"
+        }
+    }
+    
+    private func signInWithGoogle() {
+        guard let clientID = FirebaseApp.app()?.options.clientID else { return }
+        
+        let config = GIDConfiguration(clientID: clientID)
+        GIDSignIn.sharedInstance.configuration = config
+        
+        GIDSignIn.sharedInstance.signIn(withPresenting: getRootViewController()) { result, error in
+            guard error == nil else {
+                return
+            }
+            
+            guard let user = result?.user,
+                  let idToken = user.idToken?.tokenString else {
+                viewModel.errorMessage = "Failed to retrieve Google credentials."
+                return
+            }
+            
+            let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: user.accessToken.tokenString)
+            
+            Auth.auth().signIn(with: credential) { authResult, error in
+                if let error = error {
+                    viewModel.errorMessage = "Firebase Sign-In failed: \(error.localizedDescription)"
+                    return
+                }
+                
+                saveSession()
+                withAnimation {
+                    showMainListView = true
+                }
+            }
+        }
+    }
+    
+    private func saveSession() {
+        UserDefaults.standard.set(true, forKey: "isUserLoggedIn")
+    }
+    
+    private func checkSession() {
+        if UserDefaults.standard.bool(forKey: "isUserLoggedIn") {
+            authenticate()
+        } else {
+            UserDefaults.standard.set(false, forKey: "hasLaunchedBefore")
         }
     }
 }
-
 
 struct CustomTextField: View {
     var icon: String

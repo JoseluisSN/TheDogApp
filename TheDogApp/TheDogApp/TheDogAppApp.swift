@@ -32,6 +32,8 @@ struct TheDogAppApp: App {
                             MainListView(viewModel: DogViewModel())
                         case .registerView:
                             SignUpView()
+                        case .loginView:
+                            LoginView()
                         }
                     }
             }
