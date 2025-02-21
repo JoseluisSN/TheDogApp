@@ -21,19 +21,21 @@ struct TheDogAppApp: App {
     }
 
     
-    @ObservedObject var router = Router()
+    @StateObject var router = Router()
     var body: some Scene {
         WindowGroup {
             NavigationStack(path: $router.navPath) {
-                LoginView()
+                LoginView().preferredColorScheme(.light)
                     .navigationDestination(for: Router.Destination.self) { destination in
                         switch destination {
                         case .mainListView:
-                            MainListView(viewModel: DogViewModel())
+                            MainListView(viewModel: DogViewModel()).preferredColorScheme(.light)
                         case .registerView:
-                            SignUpView()
+                            SignUpView().preferredColorScheme(.light)
                         case .loginView:
-                            LoginView()
+                            LoginView().preferredColorScheme(.light)
+                        case .settingsView:
+                            SettingsView().preferredColorScheme(.light)
                         }
                     }
             }

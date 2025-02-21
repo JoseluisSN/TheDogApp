@@ -10,12 +10,15 @@ import FirebaseAuth
 
 struct SignUpView: View {
     @State private var email: String = ""
+    @State private var repeatEmail: String = ""
     @State private var password: String = ""
     @State private var emailError: String? = nil
+    @State private var repeatEmailError: String? = nil
     @State private var passwordError: String? = nil
     @AppStorage("uid") var userID: String = ""
     @Environment(\.presentationMode) var presentationMode
     @State private var isLoading = false
+    @EnvironmentObject var router: Router
     
     var body: some View {
         VStack(spacing: 0) {
@@ -39,6 +42,15 @@ struct SignUpView: View {
                     .padding(.bottom, 4)
                 if let emailError = emailError {
                     Text(emailError)
+                        .foregroundColor(.white)
+                        .font(.system(size: 14))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                
+                CustomTextField(icon: "pawprint", placeholder: "Repeat email", text: $repeatEmail)
+                    .padding(.bottom, 4)
+                if let repeatEmailError = repeatEmailError {
+                    Text(repeatEmailError)
                         .foregroundColor(.white)
                         .font(.system(size: 14))
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -97,7 +109,7 @@ struct SignUpView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: {
-                    presentationMode.wrappedValue.dismiss()
+                    router.navigateBack()
                 }) {
                     HStack {
                         Image(systemName: "chevron.left")
@@ -111,15 +123,23 @@ struct SignUpView: View {
     
     private func validateFields() {
         if email.isEmpty {
-            emailError = "Email is required."
+            emailError = "Email is required"
         } else if !isValidEmail(email) {
             emailError = "Invalid email format."
         } else {
             emailError = nil
         }
         
+        if repeatEmail.isEmpty {
+            repeatEmailError = "Empty field"
+        } else if !isValidEmail(repeatEmail) {
+            repeatEmailError = "Invalid email format."
+        } else {
+            repeatEmailError = nil
+        }
+        
         if password.isEmpty {
-            passwordError = "Password is required."
+            passwordError = "Password is required"
         } else if !isValidPassword(password) {
             passwordError = "Password must be at least 6 characters, contain an uppercase letter and special character."
         } else {

@@ -30,6 +30,13 @@ struct MainListView: View {
         NavigationView {
             VStack(spacing: 0) {
                 HStack {
+                        
+                    Image(systemName: "gearshape").foregroundStyle(Color.black)
+                        .font(.system(size: 30))
+                        .onTapGesture {
+                        router.navigate(to: .settingsView)
+                        }
+                    
                     Text("🐶 Dog Breeds")
                         .font(.largeTitle)
                         .bold()
@@ -37,17 +44,6 @@ struct MainListView: View {
                         .padding(.vertical, 10)
                         .accessibilityIdentifier("dogBreedsTitle")
                         .foregroundStyle(Color.black)
-
-                    Button(action: logOut) {
-                        Text("Log out")
-                            .foregroundColor(.white)
-                            .frame(width: 80, height: 30)
-                            .bold()
-                            .background(
-                                RoundedRectangle(cornerRadius:7)
-                                    .fill(Color.black)
-                            )
-                    }
                 }
                 .padding(.horizontal, 16)
                 
@@ -63,17 +59,6 @@ struct MainListView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 8)
-                
-                Toggle(isOn: $isBiometricEnabled) {
-                    Text(isBiometricEnabled ? "Desactivar biometría" : "Habilitar biometría")
-                        .font(.headline)
-                        .foregroundColor(.white).frame(height: 40)
-                }
-                .toggleStyle(SwitchToggleStyle(tint: .green))
-                .background(isBiometricEnabled ? Color.green : Color.gray)
-                .cornerRadius(10)
-                .padding(.horizontal, 16)
-                
                 
                 ScrollView {
                     LazyVStack {
@@ -120,24 +105,16 @@ struct MainListView: View {
                 }
                 .padding(.top, 10)
             }
-            .navigationBarHidden(true)
+
             .onAppear {
                 if viewModel.dogs.isEmpty {
                     viewModel.fetchDogs()
                 }
             }
         }
-    }
-    
-    private func logOut() {
-        do {
-            try Auth.auth().signOut()
-            UserDefaults.standard.removeObject(forKey: "isUserLoggedIn")
-            UserDefaults.standard.removeObject(forKey: "hasLaunchedBefore")
-            presentationMode.wrappedValue.dismiss()
-        } catch {
-            print("Error al cerrar sesión: \(error.localizedDescription)")
-        }
+        .navigationBarHidden(true)
+        .navigationBarBackButtonHidden(true)
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
 

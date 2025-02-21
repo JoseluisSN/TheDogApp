@@ -14,6 +14,7 @@ final class Router: ObservableObject {
         case mainListView
         case registerView
         case loginView
+        case settingsView
     }
     
     @Published var navPath = NavigationPath()
