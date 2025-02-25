@@ -36,6 +36,8 @@ struct TheDogAppApp: App {
                             LoginView()
                         case .settingsView:
                             SettingsView()
+                        case .profileView:
+                            ProfileView()
                         }
                     }
             }.preferredColorScheme(.light)

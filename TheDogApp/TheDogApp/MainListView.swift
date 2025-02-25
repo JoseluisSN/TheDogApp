@@ -55,10 +55,16 @@ struct MainListView: View {
             Text("🐶 Dog Breeds")
                 .font(.largeTitle)
                 .bold()
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, 10)
                 .accessibilityIdentifier("dogBreedsTitle")
                 .foregroundStyle(Color.black)
+            
+            Image(systemName: "person.fill")
+                .foregroundStyle(Color.black)
+                .font(.system(size: 30)).onTapGesture {
+                    router.navigate(to: .profileView)
+                }
         }
         .padding(.horizontal, 16)
         

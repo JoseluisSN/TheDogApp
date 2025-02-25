@@ -13,5 +13,8 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSLocationAlwaysUsageDescription
+NSLocationAlwaysUsageDescription</key>
+	<string>Permite que la app acceda a tu ubicación incluso cuando no la estés usando</string>
 </dict>
 </plist>
