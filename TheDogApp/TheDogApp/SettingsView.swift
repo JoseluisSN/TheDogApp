@@ -16,31 +16,8 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Settings")
-                    .font(.system(size: 38, weight: .bold))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                
-                Toggle("Biometric Authentication", isOn: Binding(
-                    get: { UserDefaults.standard.bool(forKey: "biometricEnabled") },
-                    set: { newValue in
-                        UserDefaults.standard.set(newValue, forKey: "biometricEnabled")
-                    }
-                ))
-                .padding(.horizontal, 16)
-                .font(.system(size: 20))
-                
-                Button(action: logOut) {
-                   Text("Log out")
-                       .foregroundColor(.white)
-                       .frame(width: 80, height: 30)
-                       .bold()
-                       .background(
-                           RoundedRectangle(cornerRadius:7)
-                               .fill(Color.black)
-                       )
-                       .padding(.horizontal, 16)
-               }
+                topSection
+                buttonSection
                 Spacer()
             }
         }
@@ -56,9 +33,40 @@ struct SettingsView: View {
         }
     }
     
+    private var topSection: some View {
+        VStack {
+            Text("Settings")
+                .font(.system(size: 38, weight: .bold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+            
+            Toggle("Biometric Authentication", isOn: Binding(
+                get: { UserDefaults.standard.bool(forKey: "biometricEnabled") },
+                set: { newValue in
+                    UserDefaults.standard.set(newValue, forKey: "biometricEnabled")
+                }
+            ))
+            .padding(.horizontal, 16)
+            .font(.system(size: 20))
+        }
+    }
+    
+    private var buttonSection: some View {
+        Button(action: logOut) {
+           Text("Log out")
+               .foregroundColor(.white)
+               .frame(width: 80, height: 30)
+               .bold()
+               .background(
+                   RoundedRectangle(cornerRadius:7)
+                       .fill(Color.black)
+               )
+               .padding(.horizontal, 16)
+       }
+    }
+    
     private func logOut() {
         do {
-            isBiometricEnabled = false
             try Auth.auth().signOut()
             UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
                 router.navigateToRoot()

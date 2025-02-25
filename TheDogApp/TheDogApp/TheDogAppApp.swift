@@ -29,16 +29,16 @@ struct TheDogAppApp: App {
                     .navigationDestination(for: Router.Destination.self) { destination in
                         switch destination {
                         case .mainListView:
-                            MainListView(viewModel: DogViewModel()).preferredColorScheme(.light)
+                            MainListView(viewModel: DogViewModel())
                         case .registerView:
-                            SignUpView().preferredColorScheme(.light)
+                            SignUpView()
                         case .loginView:
-                            LoginView().preferredColorScheme(.light)
+                            LoginView()
                         case .settingsView:
-                            SettingsView().preferredColorScheme(.light)
+                            SettingsView()
                         }
                     }
-            }
+            }.preferredColorScheme(.light)
             .environmentObject(router)
         }
         

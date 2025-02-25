@@ -22,83 +22,9 @@ struct SignUpView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 5) {
-                Text("Create an Account!")
-                    .foregroundColor(.black)
-                    .font(.title)
-                    .bold()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                
-                Text("We need your email and password to create an account")
-                    .font(.system(size: 15))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .foregroundColor(.black)
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            
-            VStack(spacing: 6) {
-                CustomTextField(icon: "pawprint", placeholder: "Email", text: $email)
-                    .padding(.bottom, 4)
-                if let emailError = emailError {
-                    Text(emailError)
-                        .foregroundColor(.white)
-                        .font(.system(size: 14))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                
-                CustomTextField(icon: "pawprint", placeholder: "Repeat email", text: $repeatEmail)
-                    .padding(.bottom, 4)
-                if let repeatEmailError = repeatEmailError {
-                    Text(repeatEmailError)
-                        .foregroundColor(.white)
-                        .font(.system(size: 14))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                
-                CustomSecureField(icon: "lock", placeholder: "Password", text: $password)
-                if let passwordError = passwordError {
-                    Text(passwordError)
-                        .foregroundColor(.white)
-                        .font(.system(size: 14))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(nil)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 13)
-            
-            Button {
-                validateFields()
-                if emailError == nil && passwordError == nil {
-                    registerUser()
-                }
-            } label: {
-                ZStack {
-                    if isLoading {
-                        ProgressView()
-                            .progressViewStyle(CircularProgressViewStyle(tint: .black))
-                    } else {
-                        Text("Create new account")
-                            .foregroundColor(.black)
-                            .font(.system(size: 17))
-                            .bold()
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.white)
-                )
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical)
-            .disabled(isLoading)
-            
+            topSheet
+            customTextFields
+            bottomSection
             Spacer()
         }
         .background(
@@ -119,6 +45,89 @@ struct SignUpView: View {
                 }
             }
         }
+    }
+    
+    private var topSheet: some View {
+        VStack(spacing: 5) {
+            Text("Create an Account!")
+                .foregroundColor(.black)
+                .font(.title)
+                .bold()
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Text("We need your email and password to create an account")
+                .font(.system(size: 15))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .foregroundColor(.black)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 10)
+    }
+    
+    private var customTextFields: some View {
+        VStack(spacing: 6) {
+            CustomTextField(icon: "pawprint", placeholder: "Email", text: $email)
+                .padding(.bottom, 4)
+            if let emailError = emailError {
+                Text(emailError)
+                    .foregroundColor(.white)
+                    .font(.system(size: 14))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            
+            CustomTextField(icon: "pawprint", placeholder: "Repeat email", text: $repeatEmail)
+                .padding(.bottom, 4)
+            if let repeatEmailError = repeatEmailError {
+                Text(repeatEmailError)
+                    .foregroundColor(.white)
+                    .font(.system(size: 14))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            
+            CustomSecureField(icon: "lock", placeholder: "Password", text: $password)
+            if let passwordError = passwordError {
+                Text(passwordError)
+                    .foregroundColor(.white)
+                    .font(.system(size: 14))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 13)
+    }
+    
+    private var bottomSection: some View {
+        Button {
+            validateFields()
+            if emailError == nil && passwordError == nil {
+                registerUser()
+            }
+        } label: {
+            ZStack {
+                if isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .black))
+                } else {
+                    Text("Create")
+                        .foregroundColor(.black)
+                        .font(.system(size: 17))
+                        .bold()
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color.white)
+            )
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical)
+        .disabled(isLoading)
     }
     
     private func validateFields() {
