@@ -18,27 +18,50 @@ struct LoginView: View {
     @State private var showMainListView = false
     @State private var isUnlocked = false
     @State private var isLoading = false
-
+    
     var body: some View {
-        NavigationView {
-            VStack {
-                topSheet
-                customFields
-                bottomSheet
-                Spacer()
+        ZStack {
+            NavigationView {
+                VStack {
+                    topSheet
+                    customFields
+                    bottomSheet
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .background(
+                    LinearGradient(gradient: Gradient(colors: [Color.white, Color.black]), startPoint: .top, endPoint: .bottom)
+                        .ignoresSafeArea()
+                )
+                .onAppear {
+                    checkSession()
+                }
             }
-            .padding(.horizontal, 16)
-            .background(
-                LinearGradient(gradient: Gradient(colors: [Color.white, Color.black]), startPoint: .top, endPoint: .bottom)
-                    .ignoresSafeArea()
-            )
-            .onAppear {
-                checkSession()
-            }
-           
-        }.navigationBarHidden(true)
+            .navigationBarHidden(true)
             .navigationBarBackButtonHidden(true)
             .toolbar(.hidden, for: .navigationBar)
+            
+            if isLoading {
+                ZStack {
+                    Color.black.opacity(0.1)
+                        .edgesIgnoringSafeArea(.all)
+                    
+                    VStack(spacing: 20) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(1.5)
+                        
+                        Text("Loading...")
+                            .foregroundColor(.white)
+                            .font(.headline)
+                    }
+                    .padding(30)
+                    .background(Color.gray)
+                    .cornerRadius(12)
+                }
+                .transition(.opacity)
+            }
+        }
     }
     
     private var customFields: some View {
@@ -85,7 +108,6 @@ struct LoginView: View {
         VStack {
             Button {
                 signInWithGoogle()
-                
             } label: {
                 HStack {
                     Image("googleOne")
@@ -101,6 +123,7 @@ struct LoginView: View {
                 .background(Color.white)
                 .cornerRadius(10)
             }
+            .disabled(isLoading)
             
             HStack {
                 Button {
@@ -109,8 +132,10 @@ struct LoginView: View {
                         return
                     }
                     
+                    isLoading = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                         viewModel.signIn { success in
+                            isLoading = false
                             if success {
                                 saveSession()
                                 withAnimation {
@@ -132,6 +157,7 @@ struct LoginView: View {
                         .background(Color.white)
                         .cornerRadius(10)
                 }
+                .disabled(isLoading)
             }
             .frame(maxWidth: .infinity)
         }
@@ -140,7 +166,7 @@ struct LoginView: View {
     private func authenticate(completion: @escaping (Bool) -> Void) {
         let context = LAContext()
         var error: NSError?
-
+        
         if context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error) {
             let reason = "Scan to authenticate please"
             context.evaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, localizedReason: reason) { success, authenticationError in
@@ -158,28 +184,32 @@ struct LoginView: View {
             completion(false)
         }
     }
-
     
     private func signInWithGoogle() {
         guard let clientID = FirebaseApp.app()?.options.clientID else { return }
-
+        
         let config = GIDConfiguration(clientID: clientID)
         GIDSignIn.sharedInstance.configuration = config
-
+        
         GIDSignIn.sharedInstance.signIn(withPresenting: getRootViewController()) { result, error in
             guard error == nil else {
+                viewModel.errorMessage = "Google Sign-In canceled"
                 return
             }
-
+            
             guard let user = result?.user,
                   let idToken = user.idToken?.tokenString else {
                 viewModel.errorMessage = "Failed to retrieve Google credentials."
                 return
             }
-
+            
             let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: user.accessToken.tokenString)
-
+            
+            withAnimation {
+                isLoading = true
+            }
             Auth.auth().signIn(with: credential) { authResult, error in
+                isLoading = false
                 if let error = error {
                     viewModel.errorMessage = "Firebase Sign-In failed: \(error.localizedDescription)"
                     return
@@ -200,7 +230,7 @@ struct LoginView: View {
     private func checkSession() {
         if UserDefaults.standard.bool(forKey: "isUserLoggedIn") {
             let isBiometricEnabled = UserDefaults.standard.bool(forKey: "biometricEnabled")
-
+            
             if isBiometricEnabled {
                 authenticate { success in
                     if success {
@@ -249,23 +279,37 @@ struct CustomSecureField: View {
     var placeholder: String
     @Binding var text: String
     
+    @State private var isSecure: Bool = true
+    
     var body: some View {
         HStack {
             Image(systemName: icon)
                 .foregroundColor(.gray)
                 .frame(width: 15)
-
-            SecureField(placeholder, text: $text)
+            
+            if isSecure {
+                SecureField(placeholder, text: $text)
+            } else {
+                TextField(placeholder, text: $text)
+            }
+            
+            Button(action: {
+                isSecure.toggle()
+            }) {
+                Image(systemName: isSecure ? "eye.slash" : "eye")
+                    .foregroundColor(.gray)
+            }
         }
         .padding()
         .background(Color(.white))
         .cornerRadius(10)
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.white, lineWidth: 1)
+                .stroke(Color.gray, lineWidth: 1)
         )
     }
 }
+
 
 #Preview {
     LoginView()

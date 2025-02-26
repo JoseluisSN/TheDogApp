@@ -38,6 +38,8 @@ struct TheDogAppApp: App {
                             SettingsView()
                         case .profileView:
                             ProfileView()
+                        case .reauthView:
+                            ReAuthView()
                         }
                     }
             }.preferredColorScheme(.light)

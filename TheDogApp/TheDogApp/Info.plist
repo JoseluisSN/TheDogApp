@@ -16,5 +16,10 @@
 	<key>NSLocationAlwaysUsageDescription
 NSLocationAlwaysUsageDescription</key>
 	<string>Permite que la app acceda a tu ubicación incluso cuando no la estés usando</string>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIImageName</key>
+		<string>whitedog</string>
+	</dict>
 </dict>
 </plist>

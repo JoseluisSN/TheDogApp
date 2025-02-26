@@ -7,49 +7,57 @@
 
 import SwiftUI
 import MapKit
+import LocalAuthentication
+import FirebaseAuth
 import CoreLocation
+import GoogleSignIn
+import FirebaseCore
 
 struct ProfileView: View {
     @EnvironmentObject var router: Router
     @StateObject private var locationManager = LocationManager()
-
+    @State private var showDeleteAlert = false
+    @State private var showErrorAlert = false
+    @State private var errorMessage = ""
+    @State private var showReAuthView = false
+    
     var body: some View {
-        VStack(spacing: 16) {
+        NavigationView {
             VStack {
-                Text("Account")
-                    .font(.system(size: 38, weight: .bold))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-
-                Image("profile")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 180, height: 140)
-                    .clipShape(Circle())
-
-                Text("Joseluis Sancho Navarro")
-                    .font(.title)
-                    .bold()
-
-                Text("luisnavarro280502@")
-                    .font(.subheadline)
-                    .foregroundColor(.black)
-
-                Text("Peru")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
+                texts
+                buttons()
+                Button(action: logOut) {
+                    Text("Log out")
+                        .foregroundColor(.white)
+                        .frame(height: 45)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .bold()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.black)
+                        )
+                        .padding(.horizontal, 16)
+                }
+                MapView(userLocation: locationManager.userLocation)
+                    .frame(height: 150)
+                    .cornerRadius(12)
+                    .padding()
+                Spacer()
             }
-            
-            buttons
-            
-            // PASAMOS LA UBICACIÓN AL MAPVIEW
-            MapView(userLocation: locationManager.userLocation)
-                .frame(height: 150)
-                .cornerRadius(12)
-                .padding()
-
-            Spacer()
+            .navigationBarHidden(true)
+            .alert("¿Estás seguro?", isPresented: $showDeleteAlert) {
+                Button("Cancelar", role: .cancel) { }
+                Button("Eliminar", role: .destructive) {
+                    router.navigate(to: .reauthView)
+                }
+            } message: {
+                Text("Esta acción no se puede deshacer.")
+            }
+            .alert("Error", isPresented: $showErrorAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage)
+            }
         }
         .navigationBarBackButtonHidden(true)
         .toolbar {
@@ -57,24 +65,92 @@ struct ProfileView: View {
                 Button(action: {
                     router.navigateBack()
                 }) {
-                    HStack {
-                        Image(systemName: "chevron.left")
-                            .font(.body)
-                    }
-                    .foregroundColor(.primary)
+                    Image(systemName: "chevron.left").foregroundStyle(Color.black)
                 }
+            }
+        }
+    }
+
+    func logOut() {
+        do {
+            try Auth.auth().signOut()
+            UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
+            router.navigateToRoot()
+            router.navigate(to: .loginView)
+        } catch {
+            print("Error al cerrar sesión: \(error.localizedDescription)")
+        }
+    }
+
+    func deleteUser() {
+        guard let user = Auth.auth().currentUser else { return }
+        
+        user.delete { error in
+            if let error = error {
+                errorMessage = "Error al eliminar la cuenta: \(error.localizedDescription)"
+                showErrorAlert = true
+            } else {
+                try? Auth.auth().signOut()
+                UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
+                router.navigateToRoot()
+                router.navigate(to: .loginView)
+            }
+        }
+    }
+
+    func buttons() -> some View {
+        VStack {
+            Button(action: {
+                showDeleteAlert = true
+            }) {
+                HStack {
+                    Spacer()
+                    Text("Delete account")
+                        .font(.headline)
+                    Image(systemName: "xmark")
+                    Spacer()
+                }
+                .frame(height: 50)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .background(Color(.systemGray5))
+                .foregroundColor(.black)
+                .cornerRadius(12)
+                .padding(.horizontal, 16)
             }
         }
     }
 }
 
-
+var texts: some View {
+    VStack(spacing: 0) {
+        Text("Account")
+            .font(.system(size: 36, weight: .bold))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+        
+        Image("profile")
+            .resizable()
+            .scaledToFill()
+            .frame(width: 120, height: 140)
+        
+        Text("Joseluis Sancho Navarro")
+            .font(.title2)
+        
+        Text("luisnavarro280502@")
+            .font(.subheadline)
+            .foregroundColor(.black)
+        
+        Text("Peru")
+            .font(.subheadline)
+            .foregroundColor(.gray)
+    }
+}
 
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
-
+    
     @Published var userLocation: CLLocationCoordinate2D?
-
+    
     override init() {
         super.init()
         locationManager.delegate = self
@@ -82,7 +158,7 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
     }
-
+    
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         if let location = locations.last {
             DispatchQueue.main.async {
@@ -95,45 +171,5 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 extension CLLocationCoordinate2D: @retroactive Equatable {
     public static func == (lhs: CLLocationCoordinate2D, rhs: CLLocationCoordinate2D) -> Bool {
         return lhs.latitude == rhs.latitude && lhs.longitude == rhs.longitude
-    }
-}
-
-var buttons: some View {
-    VStack {
-        Button(action: {
-            
-        }) {
-            HStack {
-                Spacer()
-                Text("History")
-                    .font(.headline)
-                Image(systemName: "cart")
-                Spacer()
-            }
-            .frame(height: 50)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .background(Color(.systemGray5))
-            .foregroundColor(.black)
-            .cornerRadius(12)
-            .padding(.horizontal, 16)
-        }
-        
-        Button(action: {
-            
-        }) {
-            HStack {
-                Spacer()
-                Text("Update account")
-                    .font(.headline)
-                Image(systemName: "slider.horizontal.3")
-                Spacer()
-            }
-            .frame(height: 50)
-            .frame(maxWidth: .infinity, alignment: .center)
-            .background(Color(.systemGray5))
-            .foregroundColor(.black)
-            .cornerRadius(12)
-            .padding(.horizontal, 16)
-        }
     }
 }

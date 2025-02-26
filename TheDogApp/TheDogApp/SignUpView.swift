@@ -61,7 +61,6 @@ struct SignUpView: View {
                 .foregroundColor(.black)
         }
         .padding(.horizontal, 20)
-        .padding(.top, 10)
     }
     
     private var customTextFields: some View {
@@ -94,7 +93,7 @@ struct SignUpView: View {
                     .lineLimit(nil)
                     .fixedSize(horizontal: false, vertical: true)
             }
-
+            
         }
         .padding(.horizontal, 20)
         .padding(.top, 13)

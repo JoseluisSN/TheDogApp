@@ -17,7 +17,6 @@ struct SettingsView: View {
         NavigationView {
             VStack(alignment: .leading, spacing: 20) {
                 topSection
-                buttonSection
                 Spacer()
             }
         }
@@ -48,31 +47,6 @@ struct SettingsView: View {
             ))
             .padding(.horizontal, 16)
             .font(.system(size: 20))
-        }
-    }
-    
-    private var buttonSection: some View {
-        Button(action: logOut) {
-           Text("Log out")
-               .foregroundColor(.white)
-               .frame(width: 80, height: 30)
-               .bold()
-               .background(
-                   RoundedRectangle(cornerRadius:7)
-                       .fill(Color.black)
-               )
-               .padding(.horizontal, 16)
-       }
-    }
-    
-    private func logOut() {
-        do {
-            try Auth.auth().signOut()
-            UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
-                router.navigateToRoot()
-                router.navigate(to: .loginView)
-        } catch {
-            print("Error al cerrar sesión: \(error.localizedDescription)")
         }
     }
 }

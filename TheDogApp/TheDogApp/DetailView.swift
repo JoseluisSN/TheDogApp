@@ -10,7 +10,7 @@ struct DetailView: View {
     let dog: Dog
     @StateObject private var viewModel = DogDetailViewModel()
     @Environment(\.presentationMode) var presentationMode
-
+    
     var body: some View {
         ScrollView {
             if viewModel.isLoading {
@@ -38,7 +38,7 @@ struct DetailView: View {
                     CharacteristicCard(title: "Life Span", value: detail.lifeSpan, icon: "clock")
                     CharacteristicCard(title: "Weight", value: "\(detail.weight.metric) kg (\(detail.weight.imperial) lbs)", icon: "scalemass.fill")
                     CharacteristicCard(title: "Height", value: "\(detail.height.metric) cm (\(detail.height.imperial) in)", icon: "ruler.fill")
-
+                    
                     if let temperament = detail.temperament {
                         CharacteristicCard(title: "Temperament", value: temperament, icon: "face.smiling.fill")
                     }
@@ -74,7 +74,7 @@ struct CharacteristicCard: View {
     let title: String
     let value: String
     let icon: String
-
+    
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
@@ -82,7 +82,7 @@ struct CharacteristicCard: View {
                 .foregroundColor(.black)
                 .padding(.horizontal, 5)
                 .frame(width: 30)
-
+            
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.headline)
