@@ -21,5 +21,7 @@ NSLocationAlwaysUsageDescription</key>
 		<key>UIImageName</key>
 		<string>whitedog</string>
 	</dict>
+	<key>GIDClientID</key>
+	<string>73340757487-fkqho0iiioq1scngn8p3i081b3e3jdr6.apps.googleusercontent.com</string>
 </dict>
 </plist>

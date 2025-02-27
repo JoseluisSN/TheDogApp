@@ -16,69 +16,142 @@ import FirebaseCore
 struct ProfileView: View {
     @EnvironmentObject var router: Router
     @StateObject private var locationManager = LocationManager()
+    @State public var email: String = ""
+    @State public var name: String = ""
+    @State private var photoURL: URL? = nil
     @State private var showDeleteAlert = false
     @State private var showErrorAlert = false
     @State private var errorMessage = ""
     @State private var showReAuthView = false
+    @State private var isLoading = false
     
     var body: some View {
-        NavigationView {
-            VStack {
-                texts
-                buttons()
-                Button(action: logOut) {
-                    Text("Log out")
-                        .foregroundColor(.white)
-                        .frame(height: 45)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .bold()
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.black)
-                        )
-                        .padding(.horizontal, 16)
+        ZStack {
+            NavigationView {
+                VStack {
+                    VStack(spacing: 0) {
+                        Text("Account")
+                            .font(.system(size: 32, weight: .bold))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                        
+                        AsyncImage(url: photoURL) { image in
+                            image.resizable().scaledToFill()
+                        } placeholder: {
+                            Image(systemName: "person.circle.fill")
+                                .resizable()
+                                .scaledToFit()
+                                .foregroundColor(.gray)
+                        }
+                        .frame(width: 140, height: 120)
+                        .clipShape(Circle())
+                        .padding(.top, 10)
+                        
+                        Text(name)
+                            .font(.title2).padding(.top, 10)
+                        
+                        Text(email)
+                            .font(.subheadline)
+                            .foregroundColor(.black)
+                        
+                        Text(locationManager.country)
+                            .font(.system(size: 16))
+                            .foregroundColor(.gray)
+                            .padding(.top, 3)
+                    }
+                    
+                    button()
+                    
+                    Button(action: logOut) {
+                        HStack {
+                            Spacer()
+                            Text("Log out")
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                            Spacer()
+                        }
+                        .frame(height: 50)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .background(Color.black)
+                            .foregroundColor(.white)
+                            .cornerRadius(12)
+                            .padding(.horizontal, 16)
+                    }.disabled(isLoading)
+                    
+                    MapView(userLocation: locationManager.userLocation?.coordinate)
+                        .frame(height: 150)
+                        .cornerRadius(12)
+                        .padding()
+                    Spacer()
                 }
-                MapView(userLocation: locationManager.userLocation)
-                    .frame(height: 150)
+                .navigationBarHidden(true)
+                .alert("are you sure?", isPresented: $showDeleteAlert) {
+                    Button("Cancel", role: .cancel) { }
+                    Button("Delete", role: .destructive) {
+                        router.navigate(to: .reauthView)
+                    }
+                } message: {
+                    Text("This action cannot be undone.")
+                }
+                .alert("Error", isPresented: $showErrorAlert) {
+                    Button("OK", role: .cancel) { }
+                } message: {
+                    Text(errorMessage)
+                }
+                .onAppear {
+                    if let user = Auth.auth().currentUser {
+                        email = user.email ?? "No email"
+                        name = user.displayName ?? "No name"
+                        photoURL = user.photoURL
+                    }
+                }
+            }
+            .navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        router.navigateBack()
+                    }) {
+                        Image(systemName: "chevron.left").foregroundStyle(Color.black)
+                    }
+                }
+            }
+            
+            if isLoading {
+                ZStack {
+                    Color.black.opacity(0.1)
+                        .edgesIgnoringSafeArea(.all)
+                    
+                    VStack(spacing: 20) {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(1.5)
+                        
+                        Text("Login out...")
+                            .foregroundColor(.white)
+                            .font(.headline)
+                    }
+                    .padding(30)
+                    .background(Color.gray)
                     .cornerRadius(12)
-                    .padding()
-                Spacer()
-            }
-            .navigationBarHidden(true)
-            .alert("¿Estás seguro?", isPresented: $showDeleteAlert) {
-                Button("Cancelar", role: .cancel) { }
-                Button("Eliminar", role: .destructive) {
-                    router.navigate(to: .reauthView)
                 }
-            } message: {
-                Text("Esta acción no se puede deshacer.")
-            }
-            .alert("Error", isPresented: $showErrorAlert) {
-                Button("OK", role: .cancel) { }
-            } message: {
-                Text(errorMessage)
-            }
-        }
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: {
-                    router.navigateBack()
-                }) {
-                    Image(systemName: "chevron.left").foregroundStyle(Color.black)
-                }
+                .transition(.opacity)
             }
         }
     }
 
     func logOut() {
-        do {
-            try Auth.auth().signOut()
-            UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
-            router.navigateToRoot()
-            router.navigate(to: .loginView)
-        } catch {
-            print("Error al cerrar sesión: \(error.localizedDescription)")
+        isLoading = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            do {
+                try Auth.auth().signOut()
+                UserDefaults.standard.set(false, forKey: "isUserLoggedIn")
+                UserDefaults.standard.removeObject(forKey: "biometricEnabled")
+                isLoading = false
+                router.navigateToRoot()
+                router.navigate(to: .loginView)
+            } catch {
+                print("Error al cerrar sesión: \(error.localizedDescription)")
+            }
         }
     }
 
@@ -98,7 +171,7 @@ struct ProfileView: View {
         }
     }
 
-    func buttons() -> some View {
+    func button() -> some View {
         VStack {
             Button(action: {
                 showDeleteAlert = true
@@ -121,36 +194,11 @@ struct ProfileView: View {
     }
 }
 
-var texts: some View {
-    VStack(spacing: 0) {
-        Text("Account")
-            .font(.system(size: 36, weight: .bold))
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16)
-        
-        Image("profile")
-            .resizable()
-            .scaledToFill()
-            .frame(width: 120, height: 140)
-        
-        Text("Joseluis Sancho Navarro")
-            .font(.title2)
-        
-        Text("luisnavarro280502@")
-            .font(.subheadline)
-            .foregroundColor(.black)
-        
-        Text("Peru")
-            .font(.subheadline)
-            .foregroundColor(.gray)
-    }
-}
-
 class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let locationManager = CLLocationManager()
-    
-    @Published var userLocation: CLLocationCoordinate2D?
-    
+    @Published var userLocation: CLLocation?
+    @Published var country: String = "Unknown"
+
     override init() {
         super.init()
         locationManager.delegate = self
@@ -158,15 +206,25 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
         locationManager.requestWhenInUseAuthorization()
         locationManager.startUpdatingLocation()
     }
-    
+
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        if let location = locations.last {
-            DispatchQueue.main.async {
-                self.userLocation = location.coordinate
+        guard let location = locations.last else { return }
+        self.userLocation = location
+        fetchCountry(from: location)
+    }
+
+    private func fetchCountry(from location: CLLocation) {
+        let geocoder = CLGeocoder()
+        geocoder.reverseGeocodeLocation(location) { placemarks, error in
+            if let placemark = placemarks?.first {
+                DispatchQueue.main.async {
+                    self.country = placemark.country ?? "Unknown"
+                }
             }
         }
     }
 }
+
 
 extension CLLocationCoordinate2D: @retroactive Equatable {
     public static func == (lhs: CLLocationCoordinate2D, rhs: CLLocationCoordinate2D) -> Bool {
